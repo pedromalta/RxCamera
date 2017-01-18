@@ -10,8 +10,9 @@ import com.ragnarok.rxcamera.error.ZoomFailedException;
 
 import java.util.List;
 
-import rx.Observable;
-import rx.Subscriber;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 
 /**
  * Created by ragnarok on 16/1/9.
@@ -30,9 +31,9 @@ public class RxCameraActionBuilder {
      * @return
      */
     public Observable<RxCamera> zoom(final int level) {
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(ObservableEmitter<RxCamera> subscriber) throws Exception {
                 Camera.Parameters parameters = rxCamera.getNativeCamera().getParameters();
                 if (!parameters.isZoomSupported()) {
                     subscriber.onError(new ZoomFailedException(ZoomFailedException.Reason.ZOOM_NOT_SUPPORT));
@@ -56,9 +57,9 @@ public class RxCameraActionBuilder {
      * @return
      */
     public Observable<RxCamera> smoothZoom(final int level) {
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(ObservableEmitter<RxCamera> subscriber) throws Exception {
                 Camera.Parameters parameters = rxCamera.getNativeCamera().getParameters();
                 if (!parameters.isZoomSupported() || !parameters.isSmoothZoomSupported()) {
                     subscriber.onError(new ZoomFailedException(ZoomFailedException.Reason.ZOOM_NOT_SUPPORT));
@@ -76,9 +77,9 @@ public class RxCameraActionBuilder {
     }
 
     public Observable<RxCamera> flashAction(final boolean isOn) {
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(ObservableEmitter<RxCamera> subscriber) throws Exception {
                 Camera.Parameters parameters = rxCamera.getNativeCamera().getParameters();
                 if (parameters.getSupportedFlashModes() == null || parameters.getSupportedFlashModes().size() <= 0) {
                     subscriber.onError(new SettingFlashException(SettingFlashException.Reason.NOT_SUPPORT));
@@ -110,9 +111,9 @@ public class RxCameraActionBuilder {
         if (focusAreaList == null || focusAreaList.size() == 0) {
             return null;
         }
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(final Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(final ObservableEmitter<RxCamera> subscriber) throws Exception {
                 Camera.Parameters parameters = rxCamera.getNativeCamera().getParameters();
                 if (parameters.getMaxNumFocusAreas() < focusAreaList.size()) {
                     subscriber.onError(new SettingAreaFocusError(SettingAreaFocusError.Reason.NOT_SUPPORT));
@@ -144,9 +145,9 @@ public class RxCameraActionBuilder {
         if (meterAreaList == null || meterAreaList.size() == 0) {
             return null;
         }
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(ObservableEmitter<RxCamera> subscriber) throws Exception {
                 Camera.Parameters parameters = rxCamera.getNativeCamera().getParameters();
                 if (parameters.getMaxNumMeteringAreas() < meterAreaList.size()) {
                     subscriber.onError(new SettingMeterAreaError(SettingMeterAreaError.Reason.NOT_SUPPORT));

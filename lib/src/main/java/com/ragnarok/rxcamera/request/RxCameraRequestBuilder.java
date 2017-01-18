@@ -5,7 +5,7 @@ import android.hardware.Camera;
 import com.ragnarok.rxcamera.RxCamera;
 import com.ragnarok.rxcamera.RxCameraData;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * Created by ragnarok on 15/11/15.

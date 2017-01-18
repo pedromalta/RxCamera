@@ -5,16 +5,18 @@ import com.ragnarok.rxcamera.RxCamera;
 import com.ragnarok.rxcamera.RxCameraData;
 import com.ragnarok.rxcamera.error.CameraDataNullException;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Action0;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 /**
  * Created by ragnarok on 15/11/22.
  */
 public class TakeOneShotRequest extends BaseRxCameraRequest implements OnRxCameraPreviewFrameCallback {
 
-    private Subscriber<? super RxCameraData> subscriber = null;
+    private ObservableEmitter<RxCameraData> subscriber = null;
 
     public TakeOneShotRequest(RxCamera rxCamera) {
         super(rxCamera);
@@ -22,14 +24,14 @@ public class TakeOneShotRequest extends BaseRxCameraRequest implements OnRxCamer
 
     @Override
     public Observable<RxCameraData> get() {
-        return Observable.create(new Observable.OnSubscribe<RxCameraData>() {
+        return Observable.create(new ObservableOnSubscribe<RxCameraData>() {
             @Override
-            public void call(Subscriber<? super RxCameraData> subscriber) {
+            public void subscribe(ObservableEmitter<RxCameraData> subscriber) throws Exception {
                 TakeOneShotRequest.this.subscriber = subscriber;
             }
-        }).doOnSubscribe(new Action0() {
+        }).doOnSubscribe(new Consumer<Disposable>() {
             @Override
-            public void call() {
+            public void accept(Disposable disposable) throws Exception {
                 rxCamera.installOneShotPreviewCallback(TakeOneShotRequest.this);
             }
         });
@@ -37,7 +39,7 @@ public class TakeOneShotRequest extends BaseRxCameraRequest implements OnRxCamer
 
     @Override
     public void onPreviewFrame(byte[] data) {
-        if (subscriber != null && !subscriber.isUnsubscribed() && rxCamera.isOpenCamera()) {
+        if (subscriber != null && !subscriber.isDisposed() && rxCamera.isOpenCamera()) {
             if (data == null || data.length == 0) {
                 subscriber.onError(new CameraDataNullException());
             }

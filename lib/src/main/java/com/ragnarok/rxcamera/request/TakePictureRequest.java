@@ -8,9 +8,10 @@ import com.ragnarok.rxcamera.error.TakePictureFailedException;
 
 import java.util.List;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Action1;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.functions.Consumer;
 
 /**
  * Created by ragnarok on 15/11/29.
@@ -46,9 +47,9 @@ public class TakePictureRequest extends BaseRxCameraRequest {
 
     @Override
     public Observable<RxCameraData> get() {
-        return Observable.create(new Observable.OnSubscribe<RxCameraData>() {
+        return Observable.create(new ObservableOnSubscribe<RxCameraData>() {
             @Override
-            public void call(final Subscriber<? super RxCameraData> subscriber) {
+            public void subscribe(final ObservableEmitter<RxCameraData> subscriber) throws Exception {
                 try {
                     Camera.Parameters param = rxCamera.getNativeCamera().getParameters();
                     // set the picture format
@@ -100,9 +101,9 @@ public class TakePictureRequest extends BaseRxCameraRequest {
                     @Override
                     public void onPictureTaken(byte[] data, Camera camera) {
                         if (isContinuePreview) {
-                            rxCamera.startPreview().doOnError(new Action1<Throwable>() {
+                            rxCamera.startPreview().doOnError(new Consumer<Throwable>() {
                                 @Override
-                                public void call(Throwable throwable) {
+                                public void accept(Throwable throwable) {
                                     subscriber.onError(throwable);
                                 }
                             }).subscribe();
