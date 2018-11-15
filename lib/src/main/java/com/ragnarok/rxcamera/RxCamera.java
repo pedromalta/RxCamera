@@ -11,9 +11,12 @@ import com.ragnarok.rxcamera.action.RxCameraActionBuilder;
 import com.ragnarok.rxcamera.config.RxCameraConfig;
 import com.ragnarok.rxcamera.request.RxCameraRequestBuilder;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
+import io.reactivex.functions.Function;
+
 
 /**
  * Created by ragnarok on 15/10/25.
@@ -34,13 +37,13 @@ public class RxCamera  {
      * @return
      */
     public static Observable<RxCamera> open(final Context context, final RxCameraConfig config) {
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(ObservableEmitter<RxCamera> subscriber) throws Exception {
                 RxCamera rxCamera = new RxCamera(context, config);
                 if (rxCamera.cameraInternal.openCameraInternal()) {
                     subscriber.onNext(rxCamera);
-                    subscriber.onCompleted();
+                    subscriber.onComplete();
                 } else {
                     subscriber.onError(rxCamera.cameraInternal.openCameraException());
                 }
@@ -56,14 +59,14 @@ public class RxCamera  {
      * @return
      */
     public static Observable<RxCamera> openAndStartPreview(Context context, RxCameraConfig config, final SurfaceView surfaceView) {
-        return open(context, config).flatMap(new Func1<RxCamera, Observable<RxCamera>>() {
+        return open(context, config).flatMap(new Function<RxCamera, ObservableSource<RxCamera>>() {
             @Override
-            public Observable<RxCamera> call(RxCamera rxCamera) {
+            public ObservableSource<RxCamera> apply(RxCamera rxCamera) throws Exception {
                 return rxCamera.bindSurface(surfaceView);
             }
-        }).flatMap(new Func1<RxCamera, Observable<RxCamera>>() {
+        }).flatMap(new Function<RxCamera, Observable<RxCamera>>() {
             @Override
-            public Observable<RxCamera> call(RxCamera rxCamera) {
+            public Observable<RxCamera> apply(RxCamera rxCamera) {
                 return rxCamera.startPreview();
             }
         });
@@ -77,14 +80,14 @@ public class RxCamera  {
      * @return
      */
     public static Observable<RxCamera> openAndStartPreview(Context context, RxCameraConfig config, final TextureView textureView) {
-        return open(context, config).flatMap(new Func1<RxCamera, Observable<RxCamera>>() {
+        return open(context, config).flatMap(new Function<RxCamera, ObservableSource<RxCamera>>() {
             @Override
-            public Observable<RxCamera> call(RxCamera rxCamera) {
+            public Observable<RxCamera> apply(RxCamera rxCamera) {
                 return rxCamera.bindTexture(textureView);
             }
-        }).flatMap(new Func1<RxCamera, Observable<RxCamera>>() {
+        }).flatMap(new Function<RxCamera, ObservableSource<RxCamera>>() {
             @Override
-            public Observable<RxCamera> call(RxCamera rxCamera) {
+            public Observable<RxCamera> apply(RxCamera rxCamera) {
                 return rxCamera.startPreview();
             }
         });
@@ -108,13 +111,13 @@ public class RxCamera  {
      * @return
      */
     public Observable<RxCamera> bindSurface(final SurfaceView surfaceView) {
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(ObservableEmitter<RxCamera> subscriber) throws Exception {
                 boolean result = cameraInternal.bindSurfaceInternal(surfaceView);
                 if (result) {
                     subscriber.onNext(RxCamera.this);
-                    subscriber.onCompleted();
+                    subscriber.onComplete();
                 } else {
                     subscriber.onError(cameraInternal.bindSurfaceFailedException());
                 }
@@ -128,13 +131,13 @@ public class RxCamera  {
      * @return
      */
     public Observable<RxCamera> bindTexture(final TextureView textureView) {
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(ObservableEmitter<RxCamera> subscriber) throws Exception {
                 boolean result = cameraInternal.bindTextureInternal(textureView);
                 if (result) {
                     subscriber.onNext(RxCamera.this);
-                    subscriber.onCompleted();
+                    subscriber.onComplete();
                 } else {
                     subscriber.onError(cameraInternal.bindSurfaceFailedException());
                 }
@@ -147,13 +150,13 @@ public class RxCamera  {
      * @return
      */
     public Observable<RxCamera> startPreview() {
-        return Observable.create(new Observable.OnSubscribe<RxCamera>() {
+        return Observable.create(new ObservableOnSubscribe<RxCamera>() {
             @Override
-            public void call(Subscriber<? super RxCamera> subscriber) {
+            public void subscribe(ObservableEmitter<RxCamera> subscriber) throws Exception {
                 boolean result = cameraInternal.startPreviewInternal();
                 if (result) {
                     subscriber.onNext(RxCamera.this);
-                    subscriber.onCompleted();
+                    subscriber.onComplete();
                 } else {
                     subscriber.onError(cameraInternal.startPreviewFailedException());
                 }
@@ -166,11 +169,11 @@ public class RxCamera  {
      * @return
      */
     public Observable<Boolean> closeCameraWithResult() {
-        return Observable.create(new Observable.OnSubscribe<Boolean>() {
+        return Observable.create(new ObservableOnSubscribe<Boolean>() {
             @Override
-            public void call(Subscriber<? super Boolean> subscriber) {
+            public void subscribe(ObservableEmitter<Boolean> subscriber) throws Exception {
                 subscriber.onNext(cameraInternal.closeCameraInternal());
-                subscriber.onCompleted();
+                subscriber.onComplete();
             }
         });
     }
@@ -180,11 +183,11 @@ public class RxCamera  {
      * @return
      */
     public Observable<Boolean> switchCamera() {
-        return Observable.create(new Observable.OnSubscribe<Boolean>() {
+        return Observable.create(new ObservableOnSubscribe<Boolean>() {
             @Override
-            public void call(Subscriber<? super Boolean> subscriber) {
+            public void subscribe(ObservableEmitter<Boolean> subscriber) throws Exception {
                 subscriber.onNext(cameraInternal.switchCameraInternal());
-                subscriber.onCompleted();
+                subscriber.onComplete();
             }
         });
     }

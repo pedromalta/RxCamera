@@ -36,7 +36,7 @@ android {
 }
 
 dependencies {
-    compile 'io.reactivex:rxandroid:1.1.0'
+    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
 }
 
 def siteUrl = 'https://github.com/ragnraok/RxCamera'

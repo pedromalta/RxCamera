@@ -38,12 +38,13 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.functions.Func2;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.observers.DisposableObserver;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -93,9 +94,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (camera != null) {
-                    camera.closeCameraWithResult().subscribe(new Action1<Boolean>() {
+                    camera.closeCameraWithResult().subscribe(new Consumer<Boolean>() {
                         @Override
-                        public void call(Boolean aBoolean) {
+                        public void accept(Boolean aBoolean) {
                             showLog("close camera finished, success: " + aBoolean);
                         }
                     });
@@ -117,14 +118,14 @@ public class MainActivity extends AppCompatActivity {
                     List<Camera.Area> areaList = Collections.singletonList(new Camera.Area(rect, 1000));
                     Observable.zip(camera.action().areaFocusAction(areaList),
                             camera.action().areaMeterAction(areaList),
-                            new Func2<RxCamera, RxCamera, Object>() {
+                            new BiFunction<RxCamera, RxCamera, Object>() {
                                 @Override
-                                public Object call(RxCamera rxCamera, RxCamera rxCamera2) {
+                                public Object apply(RxCamera rxCamera, RxCamera rxCamera2) {
                                     return rxCamera;
                                 }
-                            }).subscribe(new Subscriber<Object>() {
+                            }).subscribe(new DisposableObserver<Object>() {
                         @Override
-                        public void onCompleted() {
+                        public void onComplete() {
 
                         }
 
@@ -180,22 +181,22 @@ public class MainActivity extends AppCompatActivity {
                 .setHandleSurfaceEvent(true)
                 .build();
         Log.d(TAG, "config: " + config);
-        RxCamera.open(this, config).flatMap(new Func1<RxCamera, Observable<RxCamera>>() {
+        RxCamera.open(this, config).flatMap(new Function<RxCamera, ObservableSource<RxCamera>>() {
             @Override
-            public Observable<RxCamera> call(RxCamera rxCamera) {
+            public Observable<RxCamera> apply(RxCamera rxCamera) {
                 showLog("isopen: " + rxCamera.isOpenCamera() + ", thread: " + Thread.currentThread());
                 camera = rxCamera;
                 return rxCamera.bindTexture(textureView);
             }
-        }).flatMap(new Func1<RxCamera, Observable<RxCamera>>() {
+        }).flatMap(new Function<RxCamera, Observable<RxCamera>>() {
             @Override
-            public Observable<RxCamera> call(RxCamera rxCamera) {
+            public Observable<RxCamera> apply(RxCamera rxCamera) {
                 showLog("isbindsurface: " + rxCamera.isBindSurface() + ", thread: " + Thread.currentThread());
                 return rxCamera.startPreview();
             }
-        }).observeOn(AndroidSchedulers.mainThread()).subscribe(new Subscriber<RxCamera>() {
+        }).observeOn(AndroidSchedulers.mainThread()).subscribe(new DisposableObserver<RxCamera>() {
             @Override
-            public void onCompleted() {
+            public void onComplete() {
 
             }
 
@@ -291,9 +292,9 @@ public class MainActivity extends AppCompatActivity {
         if (!checkCamera()) {
             return;
         }
-        camera.request().successiveDataRequest().subscribe(new Action1<RxCameraData>() {
+        camera.request().successiveDataRequest().subscribe(new Consumer<RxCameraData>() {
             @Override
-            public void call(RxCameraData rxCameraData) {
+            public void accept(RxCameraData rxCameraData) {
                 showLog("successiveData, cameraData.length: " + rxCameraData.cameraData.length);
             }
         });
@@ -303,9 +304,9 @@ public class MainActivity extends AppCompatActivity {
         if (!checkCamera()) {
             return;
         }
-        camera.request().oneShotRequest().subscribe(new Action1<RxCameraData>() {
+        camera.request().oneShotRequest().subscribe(new Consumer<RxCameraData>() {
             @Override
-            public void call(RxCameraData rxCameraData) {
+            public void accept(RxCameraData rxCameraData) {
                 showLog("one shot request, cameraData.length: " + rxCameraData.cameraData.length);
             }
         });
@@ -315,9 +316,9 @@ public class MainActivity extends AppCompatActivity {
         if (!checkCamera()) {
             return;
         }
-        camera.request().periodicDataRequest(1000).subscribe(new Action1<RxCameraData>() {
+        camera.request().periodicDataRequest(1000).subscribe(new Consumer<RxCameraData>() {
             @Override
-            public void call(RxCameraData rxCameraData) {
+            public void accept(RxCameraData rxCameraData) {
                 showLog("periodic request, cameraData.length: " + rxCameraData.cameraData.length);
             }
         });
@@ -332,9 +333,9 @@ public class MainActivity extends AppCompatActivity {
             public void call() {
                 showLog("Captured!");
             }
-        }, 480, 640, ImageFormat.JPEG, true).subscribe(new Action1<RxCameraData>() {
+        }, 480, 640, ImageFormat.JPEG, true).subscribe(new Consumer<RxCameraData>() {
             @Override
-            public void call(RxCameraData rxCameraData) {
+            public void accept(RxCameraData rxCameraData) {
                 String path = Environment.getExternalStorageDirectory() + "/test.jpg";
                 File file = new File(path);
                 Bitmap bitmap = BitmapFactory.decodeByteArray(rxCameraData.cameraData, 0, rxCameraData.cameraData.length);
@@ -357,9 +358,9 @@ public class MainActivity extends AppCompatActivity {
         if (!checkCamera()) {
             return;
         }
-        camera.action().zoom(10).subscribe(new Subscriber<RxCamera>() {
+        camera.action().zoom(10).subscribe(new DisposableObserver<RxCamera>() {
             @Override
-            public void onCompleted() {
+            public void onComplete() {
 
             }
 
@@ -379,9 +380,9 @@ public class MainActivity extends AppCompatActivity {
         if (!checkCamera()) {
             return;
         }
-        camera.action().smoothZoom(10).subscribe(new Subscriber<RxCamera>() {
+        camera.action().smoothZoom(10).subscribe(new DisposableObserver<RxCamera>() {
             @Override
-            public void onCompleted() {
+            public void onComplete() {
 
             }
 
@@ -401,9 +402,9 @@ public class MainActivity extends AppCompatActivity {
         if (!checkCamera()) {
             return;
         }
-        camera.action().flashAction(true).subscribe(new Subscriber<RxCamera>() {
+        camera.action().flashAction(true).subscribe(new DisposableObserver<RxCamera>() {
             @Override
-            public void onCompleted() {
+            public void onComplete() {
 
             }
 
@@ -423,9 +424,9 @@ public class MainActivity extends AppCompatActivity {
         if (!checkCamera()) {
             return;
         }
-        camera.action().flashAction(false).subscribe(new Subscriber<RxCamera>() {
+        camera.action().flashAction(false).subscribe(new DisposableObserver<RxCamera>() {
             @Override
-            public void onCompleted() {
+            public void onComplete() {
 
             }
 
@@ -442,9 +443,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void faceDetection() {
-        camera.request().faceDetectionRequest().subscribe(new Action1<RxCameraData>() {
+        camera.request().faceDetectionRequest().subscribe(new Consumer<RxCameraData>() {
             @Override
-            public void call(RxCameraData rxCameraData) {
+            public void accept(RxCameraData rxCameraData) {
                 showLog("on face detection: " + rxCameraData.faceList);
             }
         });
@@ -454,9 +455,9 @@ public class MainActivity extends AppCompatActivity {
         if (!checkCamera()) {
             return;
         }
-        camera.switchCamera().subscribe(new Action1<Boolean>() {
+        camera.switchCamera().subscribe(new Consumer<Boolean>() {
             @Override
-            public void call(Boolean aBoolean) {
+            public void accept(Boolean aBoolean) {
                 showLog("switch camera result: " + aBoolean);
             }
         });

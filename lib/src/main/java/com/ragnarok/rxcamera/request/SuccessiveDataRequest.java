@@ -1,16 +1,16 @@
 package com.ragnarok.rxcamera.request;
 
-import android.util.Log;
-
 import com.ragnarok.rxcamera.OnRxCameraPreviewFrameCallback;
 import com.ragnarok.rxcamera.RxCamera;
 import com.ragnarok.rxcamera.RxCameraData;
 import com.ragnarok.rxcamera.error.CameraDataNullException;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action0;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 
 
 /**
@@ -20,7 +20,7 @@ public class SuccessiveDataRequest extends BaseRxCameraRequest implements OnRxCa
 
     private boolean isInstallSuccessivePreviewCallback = false;
 
-    private Subscriber<? super RxCameraData> successiveDataSubscriber = null;
+    private ObservableEmitter<RxCameraData> successiveDataSubscriber = null;
 
     public SuccessiveDataRequest(RxCamera rxCamera) {
         super(rxCamera);
@@ -28,28 +28,28 @@ public class SuccessiveDataRequest extends BaseRxCameraRequest implements OnRxCa
 
     public Observable<RxCameraData> get() {
 
-        return Observable.create(new Observable.OnSubscribe<RxCameraData>() {
+        return Observable.create(new ObservableOnSubscribe<RxCameraData>() {
             @Override
-            public void call(final Subscriber<? super RxCameraData> subscriber) {
+            public void subscribe(final ObservableEmitter<RxCameraData> subscriber) throws Exception {
                 successiveDataSubscriber = subscriber;
             }
-        }).doOnUnsubscribe(new Action0() {
+        }).doOnDispose(new Action() {
             @Override
-            public void call() {
+            public void run() {
                 rxCamera.uninstallPreviewCallback(SuccessiveDataRequest.this);
                 isInstallSuccessivePreviewCallback = false;
             }
-        }).doOnSubscribe(new Action0() {
+        }).doOnSubscribe(new Consumer<Disposable>() {
             @Override
-            public void call() {
+            public void accept(Disposable disposable) throws Exception {
                 if (!isInstallSuccessivePreviewCallback) {
                     rxCamera.installPreviewCallback(SuccessiveDataRequest.this);
                     isInstallSuccessivePreviewCallback = true;
                 }
             }
-        }).doOnTerminate(new Action0() {
+        }).doOnTerminate(new Action() {
             @Override
-            public void call() {
+            public void run() {
                 rxCamera.uninstallPreviewCallback(SuccessiveDataRequest.this);
                 isInstallSuccessivePreviewCallback = false;
             }
@@ -58,7 +58,7 @@ public class SuccessiveDataRequest extends BaseRxCameraRequest implements OnRxCa
 
     @Override
     public void onPreviewFrame(byte[] data) {
-        if (successiveDataSubscriber != null && !successiveDataSubscriber.isUnsubscribed() && rxCamera.isOpenCamera()) {
+        if (successiveDataSubscriber != null && !successiveDataSubscriber.isDisposed() && rxCamera.isOpenCamera()) {
             if (data == null || data.length == 0) {
                 successiveDataSubscriber.onError(new CameraDataNullException());
             }

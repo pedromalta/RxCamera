@@ -1,7 +1,5 @@
 package com.ragnarok.rxcamera.request;
 
-import android.util.Log;
-
 import com.ragnarok.rxcamera.OnRxCameraPreviewFrameCallback;
 import com.ragnarok.rxcamera.RxCamera;
 import com.ragnarok.rxcamera.RxCameraData;
@@ -9,13 +7,14 @@ import com.ragnarok.rxcamera.error.CameraDataNullException;
 
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by ragnarok on 15/11/15.
@@ -28,7 +27,7 @@ public class PeriodicDataRequest extends BaseRxCameraRequest implements OnRxCame
 
     private boolean isInstallCallback = false;
 
-    private Subscriber<? super RxCameraData> subscriber = null;
+    private ObservableEmitter<RxCameraData> subscriber = null;
 
     private RxCameraData currentData = new RxCameraData();
 
@@ -41,37 +40,37 @@ public class PeriodicDataRequest extends BaseRxCameraRequest implements OnRxCame
 
     @Override
     public Observable<RxCameraData> get() {
-        return Observable.create(new Observable.OnSubscribe<RxCameraData>() {
+        return Observable.create(new ObservableOnSubscribe<RxCameraData>() {
             @Override
-            public void call(final Subscriber<? super RxCameraData> subscriber) {
+            public void subscribe(final ObservableEmitter<RxCameraData> subscriber) throws Exception {
                 PeriodicDataRequest.this.subscriber = subscriber;
-                subscriber.add(Schedulers.newThread().createWorker().schedulePeriodically(new Action0() {
+                subscriber.setDisposable(Schedulers.newThread().createWorker().schedulePeriodically(new Runnable() {
                     @Override
-                    public void call() {
-                        if (currentData.cameraData != null && !subscriber.isUnsubscribed() && rxCamera.isOpenCamera()) {
+                    public void run() {
+                        if (currentData.cameraData != null && !subscriber.isDisposed() && rxCamera.isOpenCamera()) {
                             subscriber.onNext(currentData);
                         }
                     }
                 }, 0, intervalMills, TimeUnit.MILLISECONDS));
 
             }
-        }).doOnUnsubscribe(new Action0() {
+        }).doOnDispose(new Action() {
             @Override
-            public void call() {
+            public void run() {
                 rxCamera.uninstallPreviewCallback(PeriodicDataRequest.this);
                 isInstallCallback = false;
             }
-        }).doOnSubscribe(new Action0() {
+        }).doOnSubscribe(new Consumer<Disposable>() {
             @Override
-            public void call() {
+            public void accept(Disposable disposable) throws Exception {
                 if (!isInstallCallback) {
                     rxCamera.installPreviewCallback(PeriodicDataRequest.this);
                     isInstallCallback = true;
                 }
             }
-        }).doOnTerminate(new Action0() {
+        }).doOnTerminate(new Action() {
             @Override
-            public void call() {
+            public void run() {
                 rxCamera.uninstallPreviewCallback(PeriodicDataRequest.this);
                 isInstallCallback = false;
             }
@@ -80,7 +79,7 @@ public class PeriodicDataRequest extends BaseRxCameraRequest implements OnRxCame
 
     @Override
     public void onPreviewFrame(byte[] data) {
-        if (subscriber != null && !subscriber.isUnsubscribed() && rxCamera.isOpenCamera()) {
+        if (subscriber != null && !subscriber.isDisposed() && rxCamera.isOpenCamera()) {
             if (data == null || data.length == 0) {
                 subscriber.onError(new CameraDataNullException());
             }
